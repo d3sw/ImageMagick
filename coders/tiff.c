@@ -3419,7 +3419,7 @@ static MagickBooleanType WriteTIFFImage(const ImageInfo *image_info,
               if (image->storage_class == PseudoClass)
                 {
                   size_t
-                    depth;
+                    depth, /*madz*/ forcedDepth;
 
                   /*
                     Colormapped TIFF raster.
@@ -3429,6 +3429,24 @@ static MagickBooleanType WriteTIFFImage(const ImageInfo *image_info,
                   depth=1;
                   while ((GetQuantumRange(depth)+1) < image->colors)
                     depth<<=1;
+                
+                  // madz
+                  // override DEPTH
+
+                  option = GetImageArtifact(image,"tiff:force-depth");
+
+                  if (option != (const char *) NULL) {
+                     forcedDepth = (size_t) strtol(option,(char **) NULL,10);
+
+                     if (image->debug != MagickFalse)
+                      (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                      "  MADZ override DEPTH to %u (calculated depth %u)", forcedDepth, depth);
+
+                     depth = forcedDepth;
+                  }
+                
+                  // --
+                
                   status=SetQuantumDepth(image,quantum_info,depth);
                   if (status == MagickFalse)
                     ThrowWriterException(ResourceLimitError,
