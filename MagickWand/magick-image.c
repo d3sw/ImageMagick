@@ -614,10 +614,29 @@ WandExport MagickBooleanType MagickAnnotateImage(MagickWand *wand,
     return(MagickFalse);
   (void) CloneString(&draw_info->text,text);
   (void) FormatLocaleString(geometry,MagickPathExtent,"%+g%+g",x,y);
+  
+  // mod by madz
+  // use image artifact to set rotate Y
+  // (allows to angle text, have JPN-style italics)
+  double angle_y = angle;
+  const char *option;
+
+  option = GetImageArtifact(wand->images,"annotate:ry");
+          
+  if (option != (const char *) NULL) {
+      angle_y = strtod(option,(char **) NULL);
+      if (angle_y<0)
+        angle_y = angle;
+  }
+
+  // --
+  
   draw_info->affine.sx=cos((double) DegreesToRadians(fmod(angle,360.0)));
   draw_info->affine.rx=sin((double) DegreesToRadians(fmod(angle,360.0)));
-  draw_info->affine.ry=(-sin((double) DegreesToRadians(fmod(angle,360.0))));
-  draw_info->affine.sy=cos((double) DegreesToRadians(fmod(angle,360.0)));
+  // mod by madz
+  draw_info->affine.ry=(-sin((double) DegreesToRadians(fmod(angle_y,360.0))));
+  draw_info->affine.sy=cos((double) DegreesToRadians(fmod(angle_y,360.0)));
+  // --
   (void) CloneString(&draw_info->geometry,geometry);
   status=AnnotateImage(wand->images,draw_info,wand->exception);
   draw_info=DestroyDrawInfo(draw_info);
