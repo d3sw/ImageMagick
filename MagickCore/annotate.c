@@ -1351,6 +1351,9 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
   ssize_t
     code,
     y;
+  
+  // by madz
+  ssize_t antialias_mod = 0;
 
   static FT_Outline_Funcs
     OutlineMethods =
@@ -1514,6 +1517,14 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
   value=GetImageProperty(image,"type:hinting",exception);
   if ((value != (const char *) NULL) && (LocaleCompare(value,"off") == 0))
     flags|=FT_LOAD_NO_HINTING;
+  
+  // madz
+  // antialias_mod
+  value=GetImageProperty(image,"truetype:antialias_mod");
+  if ((value != (const char *) NULL))
+	  antialias_mod = (ssize_t) strtol(value,(char **) NULL,10);
+  // --
+  
   glyph.id=0;
   glyph.image=NULL;
   last_glyph.id=0;
@@ -1701,6 +1712,28 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
                 exception);
             if (q == (Quantum *) NULL)
               continue;
+            
+            // by madz
+            // antialias_mod
+            //	-1	make semi-transparent pixels even more transparent
+            //  0	do nothing
+            //	1	make semi-transparent pixels less transparent
+            if (antialias_mod==-1 && fill_opacity>0.0 && fill_opacity<1.0)
+            {
+              fill_opacity = pow(exp(fill_opacity-1.0), (2.71828182845904523536028747135266250 * 1.3));
+              if (fill_opacity<0.0) fill_opacity = 0.0;
+            }
+
+            if (antialias_mod==1 && fill_opacity>0.0 && fill_opacity<1.0)
+            {
+              //fill_opacity *= 1.2;
+              //fill_opacity = log(fill_opacity+0.1)+1.0;
+              fill_opacity = 1.0-pow(fill_opacity-1.0, 2.0);
+              if (fill_opacity>1.0) fill_opacity = 1.0;
+              if (fill_opacity<0.0) fill_opacity = 0.0;
+            }
+            // ------
+            
             if (transparent_fill == MagickFalse)
               {
                 GetPixelInfo(image,&fill_color);
