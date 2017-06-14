@@ -1520,7 +1520,7 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
   
   // madz
   // antialias_mod
-  value=GetImageProperty(image,"truetype:antialias_mod");
+  value=GetImageProperty(image,"truetype:antialias_mod",exception);
   if ((value != (const char *) NULL))
 	  antialias_mod = (ssize_t) strtol(value,(char **) NULL,10);
   // --
